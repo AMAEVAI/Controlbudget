@@ -8,7 +8,7 @@ struct RootTabView: View {
         TabView {
             DashboardView()
                 .tabItem {
-                    Label("Home", systemImage: "chart.pie.fill")
+                    Label("Home", systemImage: "house.fill")
                 }
 
             AddTransactionView()
@@ -23,9 +23,10 @@ struct RootTabView: View {
 
             BudgetsView()
                 .tabItem {
-                    Label("Budgets", systemImage: "dial.medium.fill")
+                    Label("Budgets", systemImage: "chart.bar.doc.horizontal.fill")
                 }
         }
+        .tint(DS.Colors.accent)
         .onAppear {
             SeedData.seedIfNeeded(context: modelContext)
         }

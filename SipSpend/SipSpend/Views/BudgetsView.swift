@@ -6,11 +6,16 @@ struct BudgetsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(categories) { category in
-                    BudgetEditorRow(category: category)
+            ScrollView {
+                VStack(spacing: DS.Spacing.sm) {
+                    ForEach(categories) { category in
+                        BudgetEditorRow(category: category)
+                    }
                 }
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.top, DS.Spacing.sm)
             }
+            .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("Budgets")
         }
     }
@@ -21,16 +26,23 @@ private struct BudgetEditorRow: View {
 
     @State private var budgetText = ""
 
+    private var spent: Decimal {
+        MonthSpend.spent(in: category)
+    }
+
+    private var progress: Double {
+        MonthSpend.budgetProgress(spent: spent, budget: category.monthlyBudget) ?? 0
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text(category.name)
+                Label(category.name, systemImage: category.isSoftDrinkCategory ? "cup.and.saucer.fill" : "creditcard.fill")
                     .font(.headline)
-                if category.isSoftDrinkCategory {
-                    Image(systemName: "cup.and.saucer.fill")
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                }
+                    .symbolRenderingMode(.hierarchical)
+                Spacer()
+                Text(spent.eurString)
+                    .font(.subheadline.weight(.semibold))
             }
 
             HStack {
@@ -41,14 +53,22 @@ private struct BudgetEditorRow: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 120)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .background(.background, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .onAppear { syncFromModel() }
                     .onChange(of: budgetText) { _, newValue in
                         applyBudget(text: newValue)
                     }
             }
             .font(.subheadline)
+
+            if category.monthlyBudget != nil {
+                ProgressView(value: min(progress, 1.0))
+                    .tint(progress >= 1 ? DS.Colors.danger : DS.Colors.accent)
+            }
         }
-        .padding(.vertical, 4)
+        .cardStyle()
     }
 
     private func syncFromModel() {

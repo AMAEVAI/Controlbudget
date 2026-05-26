@@ -19,80 +19,87 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    balanceCard
-                    monthSpendCard
+                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                    headerCard
                     softDrinksCard
                     budgetsSection
                 }
-                .padding()
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
             }
+            .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("SipSpend")
         }
     }
 
-    private var balanceCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private var headerCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text("Balance")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Text(account?.balance.eurString ?? "€0.00")
-                .font(.system(size: 36, weight: .bold, design: .rounded))
-                .accessibilityLabel("Account balance")
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-    }
+                .foregroundStyle(DS.Colors.muted)
 
-    private var monthSpendCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Spent this month")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Text(monthExpenses.eurString)
-                .font(.title2.bold())
+            Text(account?.balance.eurString ?? "€0.00")
+                .font(.system(size: 38, weight: .bold, design: .rounded))
+                .contentTransition(.numericText())
+
+            HStack(spacing: DS.Spacing.sm) {
+                metricChip(title: "Spent this month", value: monthExpenses.eurString)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .cardStyle(padding: DS.Spacing.lg)
     }
 
     private var softDrinksCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Label("Soft drinks this week", systemImage: "cup.and.saucer.fill")
                 .font(.headline)
 
-            HStack(spacing: 16) {
+            HStack(spacing: DS.Spacing.sm) {
                 statPill(title: "Drinks", value: "\(drinkSummary.count)")
                 statPill(title: "Spent", value: drinkSummary.spentEUR.eurString)
                 statPill(title: "Volume", value: drinkSummary.totalML.mlString)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .subtleCardStyle()
+    }
+
+    private func metricChip(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(DS.Colors.muted)
+            Text(value)
+                .font(.headline)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.sm)
+        .background(.background, in: RoundedRectangle(cornerRadius: DS.Radius.pill, style: .continuous))
     }
 
     private func statPill(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DS.Colors.muted)
             Text(value)
                 .font(.subheadline.bold())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.sm)
+        .background(.background, in: RoundedRectangle(cornerRadius: DS.Radius.pill, style: .continuous))
     }
 
     private var budgetsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text("Budgets")
                 .font(.headline)
 
             if categories.isEmpty {
                 Text("No categories yet.")
                     .foregroundStyle(.secondary)
+                    .cardStyle()
             } else {
                 ForEach(categories) { category in
                     BudgetProgressRow(category: category)
@@ -113,11 +120,21 @@ private struct BudgetProgressRow: View {
         MonthSpend.budgetProgress(spent: spent, budget: category.monthlyBudget) ?? 0
     }
 
+    private var progressColor: Color {
+        guard category.monthlyBudget != nil else { return DS.Colors.muted }
+        switch progress {
+        case 0..<0.7: return DS.Colors.success
+        case 0.7..<1.0: return DS.Colors.warning
+        default: return DS.Colors.danger
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text(category.name)
-                    .font(.subheadline.bold())
+                Label(category.name, systemImage: category.isSoftDrinkCategory ? "cup.and.saucer.fill" : "circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .symbolRenderingMode(.hierarchical)
                 Spacer()
                 if let budget = category.monthlyBudget {
                     Text("\(spent.eurString) / \(budget.eurString)")
@@ -131,12 +148,13 @@ private struct BudgetProgressRow: View {
             }
 
             if category.monthlyBudget != nil {
-                ProgressView(value: progress)
+                ProgressView(value: min(progress, 1.0))
+                    .tint(progressColor)
                     .accessibilityLabel("\(category.name) budget")
                     .accessibilityValue("\(Int(progress * 100)) percent used")
             }
         }
-        .padding(.vertical, 4)
+        .cardStyle(padding: DS.Spacing.md)
     }
 }
 

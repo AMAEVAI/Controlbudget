@@ -34,6 +34,36 @@ enum TransactionService {
         )
         context.insert(transaction)
         account.balance += amount
+        LastTransactionStore.save(from: transaction)
+        afterDataChange(context: context)
+    }
+
+    @MainActor
+    static func update(
+        _ transaction: Transaction,
+        newAmount: Decimal,
+        newDate: Date,
+        newNote: String?,
+        newVolumeML: Int?,
+        newCategory: Category?,
+        account: Account,
+        context: ModelContext
+    ) throws {
+        if let newCategory, newCategory.isSoftDrinkCategory, let newVolumeML {
+            guard validateDrinkVolume(newVolumeML) else {
+                throw TransactionError.invalidVolume
+            }
+        }
+
+        account.balance -= transaction.amount
+        transaction.amount = newAmount
+        transaction.date = newDate
+        transaction.note = newNote?.isEmpty == true ? nil : newNote
+        transaction.volumeML = newVolumeML
+        transaction.category = newCategory
+        account.balance += newAmount
+
+        LastTransactionStore.save(from: transaction)
         afterDataChange(context: context)
     }
 
@@ -47,8 +77,12 @@ enum TransactionService {
     @MainActor
     private static func afterDataChange(context: ModelContext) {
         WidgetDataStore.sync(context: context)
+        let descriptor = FetchDescriptor<Transaction>()
+        let transactions = (try? context.fetch(descriptor)) ?? []
         Task {
             await BudgetNotificationService.evaluateAll(context: context)
+            await DrinkGoalService.evaluate(transactions: transactions)
+            await EveningReminderService.scheduleIfEnabled()
         }
     }
 }
@@ -59,7 +93,7 @@ enum TransactionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidVolume:
-            return "Volume must be between \(TransactionService.minDrinkML) and \(TransactionService.maxDrinkML) ml."
+            return L10n.volumeRange(TransactionService.minDrinkML, TransactionService.maxDrinkML)
         }
     }
 }

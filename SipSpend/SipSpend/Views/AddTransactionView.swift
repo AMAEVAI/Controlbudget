@@ -19,40 +19,54 @@ struct AddTransactionView: View {
     @State private var errorMessage: String?
     @State private var showError = false
 
+    private let quickAmounts: [Double] = [1, 2.5, 5, 10]
+
     private var account: Account? { accounts.first }
-
-    private var softDrinkCategory: Category? {
-        categories.first(where: \.isSoftDrinkCategory)
-    }
-
-    private var isSoftDrinkSelected: Bool {
-        selectedCategory?.isSoftDrinkCategory == true
-    }
+    private var softDrinkCategory: Category? { categories.first(where: \.isSoftDrinkCategory) }
+    private var isSoftDrinkSelected: Bool { selectedCategory?.isSoftDrinkCategory == true }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Type", selection: $isIncome) {
-                        Text("Expense").tag(false)
-                        Text("Income").tag(true)
+                    Picker(L10n.type, selection: $isIncome) {
+                        Text(L10n.expense).tag(false)
+                        Text(L10n.income).tag(true)
                     }
                     .pickerStyle(.segmented)
                 }
 
-                Section("Amount") {
+                Section(L10n.amount) {
                     HStack {
-                        Text("€")
-                            .foregroundStyle(.secondary)
+                        Text("€").foregroundStyle(.secondary)
                         TextField("0.00", text: $amountText)
                             .keyboardType(.decimalPad)
-                            .accessibilityLabel("Amount in euros")
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(L10n.quickAmounts)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        HStack {
+                            ForEach(quickAmounts, id: \.self) { value in
+                                Button {
+                                    amountText = String(value)
+                                    Haptics.lightTap()
+                                } label: {
+                                    Text(Decimal(value).eurString)
+                                        .font(.subheadline.weight(.semibold))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(DS.Colors.cardAlt, in: RoundedRectangle(cornerRadius: 10))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
                 }
 
-                Section("Category") {
-                    Picker("Category", selection: $selectedCategory) {
-                        Text("None").tag(Optional<Category>.none)
+                Section(L10n.category) {
+                    Picker(L10n.category, selection: $selectedCategory) {
+                        Text(L10n.none).tag(Optional<Category>.none)
                         ForEach(categories) { category in
                             Text(category.name).tag(Optional(category))
                         }
@@ -60,47 +74,47 @@ struct AddTransactionView: View {
                 }
 
                 if isSoftDrinkSelected && !isIncome {
-                    Section("Soft drink") {
+                    Section(L10n.softDrink) {
                         Stepper(value: $volumeML, in: TransactionService.minDrinkML ... TransactionService.maxDrinkML, step: 50) {
                             Text(volumeML.mlString)
                         }
-                        .accessibilityLabel("Volume in milliliters")
                     }
                 }
 
-                Section("Details") {
-                    DatePicker("Date", selection: $date, displayedComponents: [.date, .hourAndMinute])
-                    TextField("Note (optional)", text: $note)
+                Section(L10n.details) {
+                    DatePicker(L10n.date, selection: $date, displayedComponents: [.date, .hourAndMinute])
+                    TextField(L10n.noteOptional, text: $note)
                 }
 
                 Section {
-                    Button {
-                        quickLogDrink()
-                    } label: {
-                        Label("Quick log drink", systemImage: "cup.and.saucer.fill")
+                    Button { quickLogDrink() } label: {
+                        Label(L10n.quickLogDrink, systemImage: "cup.and.saucer.fill")
                     }
                     .disabled(softDrinkCategory == nil || account == nil)
+
+                    Button { repeatLast() } label: {
+                        Label(L10n.repeatLast, systemImage: "arrow.clockwise")
+                    }
+                    .disabled(account == nil || LastTransactionStore.load() == nil)
                 }
             }
             .scrollContentBackground(.hidden)
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Add")
+            .navigationTitle(L10n.addTitle)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
+                    Button(L10n.save) { save() }
                         .disabled(!canSave)
                 }
             }
             .onAppear {
-                if selectedCategory == nil {
-                    selectedCategory = categories.first
-                }
+                if selectedCategory == nil { selectedCategory = categories.first }
                 volumeML = lastDrinkVolumeML
             }
-            .alert("Could not save", isPresented: $showError) {
-                Button("OK", role: .cancel) {}
+            .alert(L10n.couldNotSave, isPresented: $showError) {
+                Button(L10n.ok, role: .cancel) {}
             } message: {
-                Text(errorMessage ?? "Unknown error")
+                Text(errorMessage ?? "")
             }
         }
     }
@@ -110,36 +124,23 @@ struct AddTransactionView: View {
     }
 
     private var parsedAmount: Decimal? {
-        let normalized = amountText.replacingOccurrences(of: ",", with: ".")
-        return Decimal(string: normalized)
-    }
-
-    private func signedAmount(from value: Decimal) -> Decimal {
-        isIncome ? value : -value
+        Decimal(string: amountText.replacingOccurrences(of: ",", with: "."))
     }
 
     private func save() {
         guard let account, let value = parsedAmount, value > 0 else { return }
-
-        let signed = signedAmount(from: value)
+        let signed: Decimal = isIncome ? value : -value
         let ml: Int? = (isSoftDrinkSelected && !isIncome) ? volumeML : nil
 
         do {
             try TransactionService.add(
-                amount: signed,
-                date: date,
-                note: note,
-                volumeML: ml,
-                category: selectedCategory,
-                account: account,
-                context: modelContext
+                amount: signed, date: date, note: note, volumeML: ml,
+                category: selectedCategory, account: account, context: modelContext
             )
-
             if isSoftDrinkSelected && !isIncome {
                 lastDrinkAmountString = value.description
                 lastDrinkVolumeML = volumeML
             }
-
             amountText = ""
             note = ""
             date = .now
@@ -152,39 +153,37 @@ struct AddTransactionView: View {
 
     private func quickLogDrink() {
         guard let account, let category = softDrinkCategory else { return }
-
-        let normalized = lastDrinkAmountString.replacingOccurrences(of: ",", with: ".")
-        guard let value = Decimal(string: normalized), value > 0 else {
-            errorMessage = "Set a valid amount first, or enter one above."
+        guard let value = Decimal(string: lastDrinkAmountString.replacingOccurrences(of: ",", with: ".")), value > 0 else {
+            errorMessage = L10n.invalidAmountHint
             showError = true
             return
         }
-
-        let ml = lastDrinkVolumeML
-
         do {
             try TransactionService.add(
-                amount: -value,
-                date: .now,
-                note: nil,
-                volumeML: ml,
-                category: category,
-                account: account,
-                context: modelContext
+                amount: -value, date: .now, note: nil, volumeML: lastDrinkVolumeML,
+                category: category, account: account, context: modelContext
             )
-            amountText = ""
-            note = ""
             selectedCategory = category
-            volumeML = ml
+            volumeML = lastDrinkVolumeML
             Haptics.lightTap()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
         }
     }
-}
 
-#Preview {
-    AddTransactionView()
-        .modelContainer(for: [Account.self, Category.self, Transaction.self], inMemory: true)
+    private func repeatLast() {
+        guard let account, let last = LastTransactionStore.load() else { return }
+        let category = categories.first { $0.name == last.categoryName }
+        do {
+            try TransactionService.add(
+                amount: last.amount, date: .now, note: last.note, volumeML: last.volumeML,
+                category: category, account: account, context: modelContext
+            )
+            Haptics.success()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
 }

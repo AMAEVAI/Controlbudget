@@ -28,20 +28,30 @@ struct DrinkWeekProvider: TimelineProvider {
 struct DrinkWeekWidgetView: View {
     let entry: DrinkWeekEntry
 
+    private var isFrench: Bool {
+        Locale.current.language.languageCode?.identifier == "fr"
+    }
+
+    private var widgetTitle: String { isFrench ? "Boissons" : "Soft drinks" }
+    private var widgetDrinks: String { isFrench ? "Boissons" : "Drinks" }
+    private var widgetSpent: String { isFrench ? "Dépensé" : "Spent" }
+    private var widgetVolume: String { isFrench ? "Volume" : "Volume" }
+    private var widgetOpenApp: String { isFrench ? "Ouvrez SipSpend" : "Open SipSpend to sync" }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("Soft drinks", systemImage: "cup.and.saucer.fill")
+            Label(widgetTitle, systemImage: "cup.and.saucer.fill")
                 .font(.headline)
                 .foregroundStyle(.primary)
 
             if let snapshot = entry.snapshot {
                 HStack(spacing: 8) {
-                    widgetStat(title: "Drinks", value: "\(snapshot.count)")
-                    widgetStat(title: "Spent", value: formatEUR(snapshot.spentEUR))
-                    widgetStat(title: "Volume", value: "\(snapshot.totalML) ml")
+                    widgetStat(title: widgetDrinks, value: "\(snapshot.count)")
+                    widgetStat(title: widgetSpent, value: formatEUR(snapshot.spentEUR))
+                    widgetStat(title: widgetVolume, value: "\(snapshot.totalML) ml")
                 }
             } else {
-                Text("Open SipSpend to sync data")
+                Text(widgetOpenApp)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

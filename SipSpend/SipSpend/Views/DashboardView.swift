@@ -6,6 +6,9 @@ struct DashboardView: View {
     @Query(sort: \Category.sortOrder) private var categories: [Category]
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
 
+    @AppStorage(AppPreferences.maxDrinksPerWeek) private var maxDrinksPerWeek = 0
+    @AppStorage(AppPreferences.maxDrinkEURPerWeek) private var maxDrinkEURPerWeek = 0.0
+
     @State private var contentAppeared = false
 
     private var account: Account? { accounts.first }
@@ -35,8 +38,13 @@ struct DashboardView: View {
                     softDrinksCard
                         .staggeredCardAppear(index: 2, appeared: contentAppeared)
 
+                    if maxDrinksPerWeek > 0 || maxDrinkEURPerWeek > 0 {
+                        drinkGoalsCard
+                            .staggeredCardAppear(index: 3, appeared: contentAppeared)
+                    }
+
                     budgetsSection
-                        .staggeredCardAppear(index: 3, appeared: contentAppeared)
+                        .staggeredCardAppear(index: 4, appeared: contentAppeared)
                 }
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.top, DS.Spacing.sm)
@@ -44,7 +52,12 @@ struct DashboardView: View {
             }
             .scrollIndicators(.visible)
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("SipSpend")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    BrandLogo(size: 34, showTitle: true)
+                }
+            }
             .onAppear {
                 contentAppeared = true
             }
@@ -53,7 +66,7 @@ struct DashboardView: View {
 
     private var headerCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text("Balance")
+            Text(L10n.balance)
                 .font(.subheadline)
                 .foregroundStyle(DS.Colors.muted)
 
@@ -63,7 +76,7 @@ struct DashboardView: View {
                 .animation(DS.Motion.spring, value: account?.balance)
 
             HStack(spacing: DS.Spacing.sm) {
-                metricChip(title: "Spent this month", value: monthExpenses.eurString)
+                metricChip(title: L10n.spentThisMonth, value: monthExpenses.eurString)
                     .animation(DS.Motion.spring, value: monthExpenses)
             }
         }
@@ -95,12 +108,12 @@ struct DashboardView: View {
 
     private var spendChartCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Label("Spending — last 7 days", systemImage: "chart.bar.fill")
+            Label(L10n.spendingLast7, systemImage: "chart.bar.fill")
                 .font(.headline)
                 .symbolEffect(.bounce, value: contentAppeared)
 
             if chartPoints.allSatisfy({ $0.amount == 0 }) {
-                Text("No expenses yet this week.")
+                Text(L10n.noExpensesWeek)
                     .font(.subheadline)
                     .foregroundStyle(DS.Colors.muted)
                     .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
@@ -114,15 +127,15 @@ struct DashboardView: View {
 
     private var softDrinksCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Label("Soft drinks this week", systemImage: "cup.and.saucer.fill")
+            Label(L10n.softDrinksWeek, systemImage: "cup.and.saucer.fill")
                 .font(.headline)
 
             HStack(spacing: DS.Spacing.sm) {
-                statPill(title: "Drinks", value: "\(drinkSummary.count)")
+                statPill(title: L10n.drinks, value: "\(drinkSummary.count)")
                     .animation(DS.Motion.spring, value: drinkSummary.count)
-                statPill(title: "Spent", value: drinkSummary.spentEUR.eurString)
+                statPill(title: L10n.spent, value: drinkSummary.spentEUR.eurString)
                     .animation(DS.Motion.spring, value: drinkSummary.spentEUR)
-                statPill(title: "Volume", value: drinkSummary.totalML.mlString)
+                statPill(title: L10n.volume, value: drinkSummary.totalML.mlString)
                     .animation(DS.Motion.spring, value: drinkSummary.totalML)
             }
         }
@@ -158,18 +171,53 @@ struct DashboardView: View {
         .background(.background, in: RoundedRectangle(cornerRadius: DS.Radius.pill, style: .continuous))
     }
 
+    private var drinkGoalsCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Label(L10n.drinkGoal, systemImage: "target")
+                .font(.headline)
+
+            if maxDrinksPerWeek > 0 {
+                let progress = min(Double(drinkSummary.count) / Double(maxDrinksPerWeek), 1.0)
+                HStack {
+                    Text(L10n.drinks)
+                    Spacer()
+                    Text("\(drinkSummary.count)/\(maxDrinksPerWeek)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                ProgressView(value: progress)
+                    .tint(progress >= 1 ? DS.Colors.danger : DS.Colors.accent)
+            }
+
+            if maxDrinkEURPerWeek > 0 {
+                let spent = (drinkSummary.spentEUR as NSDecimalNumber).doubleValue
+                let progress = min(spent / maxDrinkEURPerWeek, 1.0)
+                HStack {
+                    Text(L10n.spent)
+                    Spacer()
+                    Text("\(drinkSummary.spentEUR.eurString) / \(Decimal(maxDrinkEURPerWeek).eurString)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                ProgressView(value: progress)
+                    .tint(progress >= 1 ? DS.Colors.danger : DS.Colors.accent)
+            }
+        }
+        .subtleCardStyle()
+    }
+
     private var budgetsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text("Budgets")
+            Text(L10n.budgets)
                 .font(.headline)
 
             if categories.isEmpty {
-                Text("No categories yet.")
+                Text(L10n.noCategories)
                     .foregroundStyle(.secondary)
                     .cardStyle()
             } else {
                 ForEach(Array(categories.enumerated()), id: \.offset) { index, category in
-                    BudgetProgressRow(category: category, rowIndex: index + 4, parentAppeared: contentAppeared)
+                    BudgetProgressRow(category: category, rowIndex: index + 5, parentAppeared: contentAppeared)
                 }
             }
         }

@@ -16,10 +16,10 @@ enum SeedData {
 
         if categoryCount == 0 {
             let categories: [Category] = [
-                Category(name: "Soft Drinks", monthlyBudget: 40, sortOrder: 0, isSoftDrinkCategory: true),
-                Category(name: "Food", monthlyBudget: 300, sortOrder: 1),
-                Category(name: "Transport", monthlyBudget: 120, sortOrder: 2),
-                Category(name: "Other", monthlyBudget: 100, sortOrder: 3),
+                Category(name: L10n.catSoftDrinks, monthlyBudget: 40, sortOrder: 0, isSoftDrinkCategory: true),
+                Category(name: L10n.catFood, monthlyBudget: 300, sortOrder: 1),
+                Category(name: L10n.catTransport, monthlyBudget: 120, sortOrder: 2),
+                Category(name: L10n.catOther, monthlyBudget: 100, sortOrder: 3),
             ]
 
             for category in categories {

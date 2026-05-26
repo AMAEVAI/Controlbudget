@@ -18,7 +18,7 @@ struct BudgetsView: View {
             }
             .scrollIndicators(.visible)
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Budgets")
+            .navigationTitle(L10n.budgetsTitle)
         }
     }
 }
@@ -48,10 +48,10 @@ private struct BudgetEditorRow: View {
             }
 
             HStack {
-                Text("Monthly limit")
+                Text(L10n.monthlyLimit)
                     .foregroundStyle(.secondary)
                 Spacer()
-                TextField("No limit", text: $budgetText)
+                TextField(L10n.noLimit, text: $budgetText)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 120)

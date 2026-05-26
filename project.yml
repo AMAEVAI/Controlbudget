@@ -24,6 +24,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.sipspend.app
         INFOPLIST_KEY_CFBundleDisplayName: SipSpend
         INFOPLIST_KEY_NSUserNotificationsUsageDescription: "SipSpend alerts you when a category reaches 80% or 100% of its monthly budget."
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "Unlock SipSpend to protect your budget data."
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait

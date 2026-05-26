@@ -5,7 +5,7 @@ import SwiftData
 struct SipSpendApp: App {
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            AppRootView()
         }
         .modelContainer(for: [Account.self, Category.self, Transaction.self])
     }

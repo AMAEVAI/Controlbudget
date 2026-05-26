@@ -7,24 +7,38 @@ struct ActivityView: View {
     @Query(sort: \Account.name) private var accounts: [Account]
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
 
+    @State private var searchText = ""
+    @State private var editingTransaction: Transaction?
+
     private var account: Account? { accounts.first }
+
+    private var filtered: [Transaction] {
+        guard !searchText.isEmpty else { return transactions }
+        let query = searchText.lowercased()
+        return transactions.filter { tx in
+            (tx.category?.name.lowercased().contains(query) ?? false)
+                || (tx.note?.lowercased().contains(query) ?? false)
+                || tx.amount.eurString.lowercased().contains(query)
+        }
+    }
 
     var body: some View {
         NavigationStack {
             Group {
                 if transactions.isEmpty {
-                    ContentUnavailableView(
-                        "No transactions",
-                        systemImage: "tray",
-                        description: Text("Add an expense or income from the Add tab.")
-                    )
+                    ContentUnavailableView {
+                        Label(L10n.noTransactions, systemImage: "tray")
+                    } description: {
+                        Text(L10n.noTransactionsHint)
+                    }
                 } else {
                     List {
-                        ForEach(transactions) { transaction in
+                        ForEach(filtered) { transaction in
                             TransactionRow(transaction: transaction)
                                 .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
+                                .onTapGesture { editingTransaction = transaction }
                         }
                         .onDelete(perform: delete)
                     }
@@ -36,14 +50,18 @@ struct ActivityView: View {
                     .background(Color(uiColor: .systemGroupedBackground))
                 }
             }
-            .navigationTitle("Activity")
+            .navigationTitle(L10n.activityTitle)
+            .searchable(text: $searchText, prompt: L10n.search)
+            .sheet(item: $editingTransaction) { transaction in
+                EditTransactionView(transaction: transaction)
+            }
         }
     }
 
     private func delete(at offsets: IndexSet) {
         guard let account else { return }
         for index in offsets {
-            let transaction = transactions[index]
+            let transaction = filtered[index]
             TransactionService.remove(transaction, account: account, context: modelContext)
         }
     }
@@ -64,20 +82,16 @@ private struct TransactionRow: View {
                 }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(transaction.category?.name ?? "Uncategorized")
+                Text(transaction.category?.name ?? L10n.uncategorized)
                     .font(.headline)
                 Text(transaction.date, style: .date)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 if let note = transaction.note, !note.isEmpty {
-                    Text(note)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text(note).font(.caption).foregroundStyle(.secondary)
                 }
                 if let ml = transaction.volumeML {
-                    Text(ml.mlString)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    Text(ml.mlString).font(.caption2).foregroundStyle(.tertiary)
                 }
             }
 
@@ -88,11 +102,5 @@ private struct TransactionRow: View {
                 .foregroundColor(transaction.amount < 0 ? .primary : .green)
         }
         .cardStyle()
-        .accessibilityElement(children: .combine)
     }
-}
-
-#Preview {
-    ActivityView()
-        .modelContainer(for: [Account.self, Category.self, Transaction.self], inMemory: true)
 }

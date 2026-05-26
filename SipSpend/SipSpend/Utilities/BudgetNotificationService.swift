@@ -82,11 +82,11 @@ enum BudgetNotificationService {
         let content = UNMutableNotificationContent()
         switch level {
         case .warning:
-            content.title = "Budget almost used"
-            content.body = "\(categoryName): \(spent.eurString) of \(budget.eurString) this month (80%+)."
+            content.title = L10n.budgetWarningTitle
+            content.body = L10n.budgetWarningBody(categoryName, spent: spent.eurString, budget: budget.eurString)
         case .exceeded:
-            content.title = "Budget limit reached"
-            content.body = "\(categoryName): monthly limit \(budget.eurString) reached."
+            content.title = L10n.budgetExceededTitle
+            content.body = L10n.budgetExceededBody(categoryName, budget: budget.eurString)
         }
         content.sound = .default
 

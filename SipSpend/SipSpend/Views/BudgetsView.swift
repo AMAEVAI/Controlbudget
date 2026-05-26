@@ -14,7 +14,9 @@ struct BudgetsView: View {
                 }
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.top, DS.Spacing.sm)
+                .tabBarScrollPadding()
             }
+            .scrollIndicators(.visible)
             .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("Budgets")
         }

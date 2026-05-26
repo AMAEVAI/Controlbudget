@@ -34,12 +34,22 @@ enum TransactionService {
         )
         context.insert(transaction)
         account.balance += amount
+        afterDataChange(context: context)
     }
 
     @MainActor
     static func remove(_ transaction: Transaction, account: Account, context: ModelContext) {
         account.balance -= transaction.amount
         context.delete(transaction)
+        afterDataChange(context: context)
+    }
+
+    @MainActor
+    private static func afterDataChange(context: ModelContext) {
+        WidgetDataStore.sync(context: context)
+        Task {
+            await BudgetNotificationService.evaluateAll(context: context)
+        }
     }
 }
 

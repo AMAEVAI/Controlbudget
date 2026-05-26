@@ -30,6 +30,9 @@ struct ActivityView: View {
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        Color.clear.frame(height: DS.Layout.tabBarScrollPadding)
+                    }
                     .background(Color(uiColor: .systemGroupedBackground))
                 }
             }

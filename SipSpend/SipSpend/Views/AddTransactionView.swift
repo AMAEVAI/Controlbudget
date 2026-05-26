@@ -143,6 +143,7 @@ struct AddTransactionView: View {
             amountText = ""
             note = ""
             date = .now
+            Haptics.success()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
@@ -175,6 +176,7 @@ struct AddTransactionView: View {
             note = ""
             selectedCategory = category
             volumeML = ml
+            Haptics.lightTap()
         } catch {
             errorMessage = error.localizedDescription
             showError = true

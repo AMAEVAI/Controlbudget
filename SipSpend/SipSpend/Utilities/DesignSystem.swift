@@ -22,6 +22,17 @@ enum DS {
         static let danger = Color.red
         static let muted = Color.secondary
     }
+
+    /// Extra space so the last row clears the floating tab bar when scrolling.
+    enum Layout {
+        static let tabBarScrollPadding: CGFloat = 96
+    }
+
+    enum Motion {
+        static let spring = Animation.spring(response: 0.45, dampingFraction: 0.82)
+        static let chartSpring = Animation.spring(response: 0.85, dampingFraction: 0.78)
+        static let staggerStep: Double = 0.07
+    }
 }
 
 extension View {
@@ -39,5 +50,20 @@ extension View {
         self
             .padding(padding)
             .background(DS.Colors.cardAlt, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+    }
+
+    func tabBarScrollPadding() -> some View {
+        padding(.bottom, DS.Layout.tabBarScrollPadding)
+    }
+
+    func staggeredCardAppear(index: Int, appeared: Bool) -> some View {
+        opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 18)
+            .scaleEffect(appeared ? 1 : 0.97)
+            .animation(
+                .spring(response: 0.5, dampingFraction: 0.82)
+                    .delay(Double(index) * DS.Motion.staggerStep),
+                value: appeared
+            )
     }
 }

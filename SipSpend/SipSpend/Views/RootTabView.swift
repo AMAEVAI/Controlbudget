@@ -29,6 +29,11 @@ struct RootTabView: View {
         .tint(DS.Colors.accent)
         .onAppear {
             SeedData.seedIfNeeded(context: modelContext)
+            WidgetDataStore.sync(context: modelContext)
+            Task {
+                await BudgetNotificationService.requestAuthorizationIfNeeded()
+                await BudgetNotificationService.evaluateAll(context: modelContext)
+            }
         }
     }
 }

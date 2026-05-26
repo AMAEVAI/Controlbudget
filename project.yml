@@ -13,15 +13,39 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: SipSpend
+      - path: SipSpend/SipSpend
+    entitlements:
+      path: SipSpend/SipSpend.entitlements
+    dependencies:
+      - target: SipSpendWidgetExtension
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sipspend.app
         INFOPLIST_KEY_CFBundleDisplayName: SipSpend
+        INFOPLIST_KEY_NSUserNotificationsUsageDescription: "SipSpend alerts you when a category reaches 80% or 100% of its monthly budget."
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         GENERATE_INFOPLIST_FILE: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: SipSpend/SipSpend.entitlements
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 1.0
+  SipSpendWidgetExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SipSpend/SipSpendWidgetExtension
+      - path: SipSpend/SipSpend/Shared
+    entitlements:
+      path: SipSpend/SipSpendWidgetExtension/SipSpendWidgetExtension.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: amaev.SipSpend.DrinkWidget
+        INFOPLIST_FILE: SipSpend/SipSpendWidgetExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: SipSpend/SipSpendWidgetExtension/SipSpendWidgetExtension.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0
+        SKIP_INSTALL: YES

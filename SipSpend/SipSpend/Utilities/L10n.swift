@@ -113,6 +113,6 @@ enum L10n {
     }
 
     private static func tr(_ key: String, _ defaultValue: String) -> String {
-        String(localized: String.LocalizationValue(key), defaultValue: defaultValue)
+        Bundle.main.localizedString(forKey: key, value: defaultValue, table: nil)
     }
 }

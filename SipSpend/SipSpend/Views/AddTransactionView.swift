@@ -43,6 +43,7 @@ struct AddTransactionView: View {
                 Section("Amount") {
                     HStack {
                         Text("€")
+                            .foregroundStyle(.secondary)
                         TextField("0.00", text: $amountText)
                             .keyboardType(.decimalPad)
                             .accessibilityLabel("Amount in euros")
@@ -81,6 +82,8 @@ struct AddTransactionView: View {
                     .disabled(softDrinkCategory == nil || account == nil)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("Add")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
